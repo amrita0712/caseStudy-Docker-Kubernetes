@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-test
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 31111
+  selector:
+     myvalue: service-port
+  type: NodePort
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: task-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: testsecret
+          mountPath: "/tmp/mysecrets"  
+        - name: task-pv-storage 
+          mountPath: "/usr/share/nginx/html"    
+      volumes:
+      - name: testsecret
+        secret:
+          secretName: mysecret
+      - name: task-pv-storage
+        persistentVolumeClaim:
+          claimName: task-pv-claim
+	  
+
